@@ -1,0 +1,7 @@
+apps/api/node_modules
+apps/api/dist
+apps/panel/node_modules
+apps/panel/dist
+**/*.db
+**/*.db-journal
+.env

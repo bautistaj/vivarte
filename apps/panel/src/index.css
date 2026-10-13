@@ -1,0 +1,138 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black: #0a0a0a;
+  --white: #fafafa;
+  --gray: #888;
+  --border: #e0e0e0;
+  --red: #c0392b;
+  --radius: 6px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  color: var(--black);
+  background: var(--white);
+}
+
+a { color: inherit; text-decoration: underline; }
+button { cursor: pointer; font-size: .9rem; border-radius: var(--radius); border: 1px solid var(--black); }
+
+/* ── Auth ────────────────────────────────────── */
+.auth-wrap {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.auth-wrap h1 { font-size: 2rem; letter-spacing: -.05em; margin-bottom: 2rem; }
+.auth-form {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+.auth-form h2 { font-size: 1.1rem; margin-bottom: .2rem; }
+
+/* ── Inputs ──────────────────────────────────── */
+input[type=text],
+input[type=email],
+input[type=password] {
+  width: 100%;
+  padding: .7rem .9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  outline: none;
+  background: #fff;
+}
+input:focus { border-color: var(--black); }
+
+/* ── Buttons ─────────────────────────────────── */
+.btn {
+  padding: .7rem 1.4rem;
+  background: var(--black);
+  color: var(--white);
+  border-color: var(--black);
+  font-size: .95rem;
+}
+.btn:hover:not(:disabled) { opacity: .82; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-ghost {
+  background: transparent;
+  color: var(--black);
+}
+.btn-danger {
+  background: transparent;
+  color: var(--red);
+  border-color: var(--red);
+  font-size: .8rem;
+  padding: .35rem .7rem;
+}
+.btn-danger:hover { background: var(--red); color: #fff; }
+
+/* ── Error / helpers ─────────────────────────── */
+.error { color: var(--red); font-size: .85rem; }
+.muted { color: var(--gray); font-size: .875rem; }
+
+/* ── Dashboard ───────────────────────────────── */
+.dashboard header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .9rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.dashboard header h1 { font-size: 1.3rem; letter-spacing: -.03em; }
+.header-right { display: flex; align-items: center; gap: 1rem; }
+
+.dashboard main { max-width: 880px; margin: 0 auto; padding: 2rem 1.5rem; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.toolbar h2 { font-size: 1.1rem; }
+
+.artwork-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.artwork-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card-thumb {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  display: block;
+  background: var(--border);
+}
+.card-body { padding: 1rem; display: flex; flex-direction: column; gap: .4rem; }
+.card-body h3 { font-size: .95rem; }
+.card-actions { display: flex; gap: .5rem; margin-top: .5rem; align-items: center; }
+.card-actions a { font-size: .8rem; }
+
+/* ── Artwork form ────────────────────────────── */
+.page { max-width: 580px; margin: 2rem auto; padding: 0 1.5rem 4rem; }
+.page h1 { font-size: 1.4rem; margin-bottom: 1.8rem; }
+
+.field { display: flex; flex-direction: column; gap: .4rem; }
+.field label { font-size: .85rem; font-weight: 600; }
+.field input[type=file] { font-size: .875rem; }
+
+.artwork-form { display: flex; flex-direction: column; gap: 1.4rem; }
+.image-preview {
+  max-width: 180px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.progress-wrap { display: flex; flex-direction: column; gap: .5rem; }
+progress { width: 100%; accent-color: var(--black); }
+
+.form-actions { display: flex; gap: .75rem; }
+
+/* ── Loading ─────────────────────────────────── */
+.loading { display: flex; justify-content: center; padding: 4rem; color: var(--gray); }

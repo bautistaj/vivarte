@@ -1,5 +1,6 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify'
 import jwtPlugin from '@fastify/jwt'
+import multipart from '@fastify/multipart'
 import cors from '@fastify/cors'
 import staticFiles from '@fastify/static'
 import fs from 'fs'
@@ -8,6 +9,7 @@ import path from 'path'
 import prismaPlugin from './plugins/prisma'
 import storagePlugin from './plugins/storage'
 import authRoutes from './routes/auth'
+import artworkRoutes from './routes/artworks'
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -32,6 +34,13 @@ async function build() {
 
   await app.register(jwtPlugin, { secret: process.env.JWT_SECRET! })
 
+  await app.register(multipart, {
+    limits: {
+      fileSize: parseInt(process.env.MAX_VIDEO_SIZE || '52428800'),
+      files: 3,
+    },
+  })
+
   app.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       await request.jwtVerify()
@@ -43,25 +52,18 @@ async function build() {
   await app.register(prismaPlugin)
   await app.register(storagePlugin)
 
-  // Serve uploaded files at /files/*
+  // Archivos subidos
   const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads')
-  await app.register(staticFiles, {
-    root: uploadDir,
-    prefix: '/files/',
-    decorateReply: false,
-  })
+  await app.register(staticFiles, { root: uploadDir, prefix: '/files/', decorateReply: false })
 
-  // Serve built panel (populated in Phase 2)
+  // Panel compilado (Fase 2+)
   const publicDir = path.join(__dirname, 'public')
   if (fs.existsSync(publicDir)) {
-    await app.register(staticFiles, {
-      root: publicDir,
-      prefix: '/',
-      decorateReply: false,
-    })
+    await app.register(staticFiles, { root: publicDir, prefix: '/', decorateReply: false })
   }
 
   await app.register(authRoutes, { prefix: '/api/auth' })
+  await app.register(artworkRoutes, { prefix: '/api/artworks' })
 
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
 

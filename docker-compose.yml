@@ -10,7 +10,10 @@
 services:
   vivarte:
     build:
-      context: ./apps/api
+      context: .
+      dockerfile: apps/api/Dockerfile
+      args:
+        VITE_BASE_PATH: /vivarte/
     image: vivarte:latest
     container_name: vivarte
     restart: unless-stopped
