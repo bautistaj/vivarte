@@ -10,6 +10,7 @@ import prismaPlugin from './plugins/prisma'
 import storagePlugin from './plugins/storage'
 import authRoutes from './routes/auth'
 import artworkRoutes from './routes/artworks'
+import elementRoutes from './routes/elements'
 import viewerRoutes from './routes/viewer'
 
 declare module '@fastify/jwt' {
@@ -38,7 +39,7 @@ async function build() {
   await app.register(multipart, {
     limits: {
       fileSize: parseInt(process.env.MAX_VIDEO_SIZE || '52428800'),
-      files: 3,
+      files: 10,
     },
   })
 
@@ -75,6 +76,7 @@ async function build() {
 
   await app.register(authRoutes, { prefix: '/api/auth' })
   await app.register(artworkRoutes, { prefix: '/api/artworks' })
+  await app.register(elementRoutes, { prefix: '/api/artworks' })
   await app.register(viewerRoutes, { prefix: '/a' })
 
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))

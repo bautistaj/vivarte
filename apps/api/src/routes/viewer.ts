@@ -4,25 +4,70 @@ function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
+function pos(x: number, y: number, z: number) {
+  return `${x} ${y} ${z}`
+}
+
 const viewerRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/:slug', async (request, reply) => {
     const { slug } = request.params as { slug: string }
     const artwork = await fastify.prisma.artwork.findUnique({
       where: { slug },
-      select: { id: true, title: true, videoKey: true, mindKey: true, imageWidth: true, imageHeight: true },
+      select: {
+        id: true, title: true, mindKey: true, imageWidth: true, imageHeight: true,
+        elements: { orderBy: { order: 'asc' } },
+      },
     })
     if (!artwork) return reply.status(404).send('<h1>Obra no encontrada</h1>')
 
     const base = process.env.PUBLIC_BASE_URL || ''
-    const videoUrl = `${base}/files/${artwork.videoKey}`
-    const mindUrl  = `${base}/files/${artwork.mindKey}`
-    const ratio    = artwork.imageWidth > 0 ? (artwork.imageHeight / artwork.imageWidth).toFixed(6) : '1'
+    const mindUrl = `${base}/files/${artwork.mindKey}`
 
-    // Increment scan count without blocking the response
     fastify.prisma.artwork.update({
       where: { id: artwork.id },
       data: { scanCount: { increment: 1 } },
     }).catch(() => {})
+
+    const elements = artwork.elements
+    const hasContent = elements.length > 0
+
+    // <a-assets> — solo video e imagen van aquí; model3d se referencia directo
+    const assetTags = elements
+      .filter(e => e.type === 'video' || e.type === 'image')
+      .map(e => {
+        const url = escapeHtml(`${base}/files/${e.fileKey}`)
+        const id  = escapeHtml(e.id)
+        if (e.type === 'video') {
+          return `      <video id="${id}" src="${url}" preload="auto" loop playsinline crossorigin="anonymous"></video>`
+        }
+        return `      <img id="${id}" src="${url}" crossorigin="anonymous" />`
+      })
+      .join('\n')
+
+    // entidades A-Frame por elemento
+    const entityTags = elements.map(e => {
+      const p = escapeHtml(pos(e.posX, e.posY, e.posZ))
+      const r = escapeHtml(pos(e.rotX, e.rotY, e.rotZ))
+      const s = escapeHtml(pos(e.scaleX, e.scaleY, e.scaleZ))
+      const id = escapeHtml(e.id)
+
+      if (e.type === 'video') {
+        return `      <a-plane src="#${id}" position="${p}" rotation="${r}" scale="${s}" width="${e.width}" height="${e.height}"></a-plane>`
+      }
+      if (e.type === 'image') {
+        return `      <a-plane src="#${id}" position="${p}" rotation="${r}" scale="${s}" width="${e.width}" height="${e.height}"></a-plane>`
+      }
+      // model3d
+      const url = escapeHtml(`${base}/files/${e.fileKey}`)
+      return `      <a-gltf-model src="${url}" position="${p}" rotation="${r}" scale="${s}"></a-gltf-model>`
+    }).join('\n')
+
+    // IDs de videos para play/pause en JS
+    const videoIds = JSON.stringify(elements.filter(e => e.type === 'video').map(e => e.id))
+
+    const overlayMsg = hasContent
+      ? 'Apunta la cámara a la obra para ver la animación'
+      : 'Esta obra no tiene contenido AR'
 
     const html = `<!DOCTYPE html>
 <html>
@@ -51,9 +96,9 @@ const viewerRoutes: FastifyPluginAsync = async (fastify) => {
 </head>
 <body>
   <div id="overlay">
-    <div class="icon">📷</div>
+    <div class="icon">${hasContent ? '📷' : '🖼️'}</div>
     <h2>${escapeHtml(artwork.title)}</h2>
-    <p>Apunta la cámara a la obra para ver la animación</p>
+    <p>${overlayMsg}</p>
   </div>
 
   <a-scene
@@ -61,33 +106,46 @@ const viewerRoutes: FastifyPluginAsync = async (fastify) => {
     color-space="sRGB"
     renderer="colorManagement: true; physicallyCorrectLights: true"
     vr-mode-ui="enabled: false"
+    webxr="optionalFeatures: "
     device-orientation-permission-ui="enabled: false"
   >
     <a-assets>
-      <video id="ar-video" src="${videoUrl}" preload="auto" loop playsinline crossorigin="anonymous"></video>
+${assetTags}
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
     <a-entity mindar-image-target="targetIndex: 0">
-      <a-plane src="#ar-video" position="0 0 0" width="1" height="${ratio}" rotation="0 0 0"></a-plane>
+${entityTags}
     </a-entity>
   </a-scene>
 
   <script>
-    const overlay = document.getElementById('overlay')
-    const video   = document.getElementById('ar-video')
-    const target  = document.querySelector('[mindar-image-target]')
+    const overlay   = document.getElementById('overlay')
+    const target    = document.querySelector('[mindar-image-target]')
+    const scene     = document.querySelector('a-scene')
+    const videoIds  = ${videoIds}
+    const hasContent = ${hasContent}
 
-    target.addEventListener('targetFound', () => {
-      overlay.classList.add('hidden')
-      video.play().catch(() => {})
-    })
+    scene.addEventListener('enter-vr', function() { this.exitVR() })
 
-    target.addEventListener('targetLost', () => {
-      overlay.classList.remove('hidden')
-      video.pause()
-    })
+    if (hasContent) {
+      target.addEventListener('targetFound', () => {
+        overlay.classList.add('hidden')
+        videoIds.forEach(id => {
+          const el = document.getElementById(id)
+          if (el) el.play().catch(() => {})
+        })
+      })
+
+      target.addEventListener('targetLost', () => {
+        overlay.classList.remove('hidden')
+        videoIds.forEach(id => {
+          const el = document.getElementById(id)
+          if (el) el.pause()
+        })
+      })
+    }
   </script>
 </body>
 </html>`

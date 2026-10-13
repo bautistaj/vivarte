@@ -66,7 +66,8 @@ export default function Dashboard() {
                 <h3>{a.title}</h3>
                 <p className="muted">{a.scanCount} escaneos · {new Date(a.createdAt).toLocaleDateString('es-MX')}</p>
                 <div className="card-actions">
-                  <a href={a.viewerUrl} target="_blank" rel="noreferrer">Ver visor</a>
+                  <Link to={`/obras/${a.id}/compositor`}>Compositor</Link>
+                  <a href={a.viewerUrl} target="_blank" rel="noreferrer">Ver AR</a>
                   <button className="btn btn-ghost" onClick={() => handleQr(a.id, a.slug)}>QR</button>
                   <button className="btn btn-danger" onClick={() => handleDelete(a.id, a.title)}>Eliminar</button>
                 </div>

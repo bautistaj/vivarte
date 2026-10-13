@@ -2,7 +2,6 @@ import { useState, FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { createArtwork } from '../api/client'
 
-// ── MindAR compiler (import dinámico — Vite lo separa en su propio chunk)
 interface MindARCompiler {
   compileImageTargets(imgs: HTMLImageElement[], onProgress: (p: number) => void): Promise<void>
   exportData(): Promise<ArrayBuffer>
@@ -19,7 +18,6 @@ function loadImage(file: File): Promise<HTMLImageElement> {
 }
 
 async function compileMindAR(imageFile: File, onProgress: (p: number) => void): Promise<Blob> {
-  // Carga el módulo solo cuando se necesita (lazy chunk)
   const { Compiler } = await import('mind-ar/dist/mindar-image.prod.js') as { Compiler: new () => MindARCompiler }
   const compiler = new Compiler()
   const img = await loadImage(imageFile)
@@ -33,7 +31,6 @@ type Step = 'idle' | 'compiling' | 'uploading'
 export default function ArtworkNew() {
   const [title, setTitle] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [videoFile, setVideoFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [step, setStep] = useState<Step>('idle')
   const [progress, setProgress] = useState(0)
@@ -52,11 +49,10 @@ export default function ArtworkNew() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!imageFile || !videoFile || !title) return
+    if (!imageFile || !title) return
     setError('')
 
     try {
-      // Dimensiones reales de la imagen (necesarias para el visor AR)
       const img = await loadImage(imageFile)
       const { naturalWidth: imageWidth, naturalHeight: imageHeight } = img
 
@@ -70,11 +66,10 @@ export default function ArtworkNew() {
       fd.append('imageWidth', String(imageWidth))
       fd.append('imageHeight', String(imageHeight))
       fd.append('image', imageFile)
-      fd.append('video', videoFile)
       fd.append('mind', mindBlob, 'target.mind')
 
-      await createArtwork(fd)
-      navigate('/', { replace: true })
+      const { artwork } = await createArtwork(fd)
+      navigate(`/obras/${artwork.id}/compositor`, { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error inesperado')
       setStep('idle')
@@ -89,18 +84,17 @@ export default function ArtworkNew() {
 
         <div className="field">
           <label htmlFor="title">Título</label>
-          <input id="title" type="text" value={title} onChange={e => setTitle(e.target.value)} required disabled={busy} placeholder="Nombre de la obra" />
+          <input id="title" type="text" value={title} onChange={e => setTitle(e.target.value)}
+            required disabled={busy} placeholder="Nombre de la obra" />
         </div>
 
         <div className="field">
-          <label htmlFor="image">Foto de la obra <span className="muted">(jpg · png · webp, máx 10 MB)</span></label>
-          <input id="image" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImage} required disabled={busy} />
+          <label htmlFor="image">
+            Foto de la obra <span className="muted">(jpg · png · webp, máx 10 MB)</span>
+          </label>
+          <input id="image" type="file" accept="image/jpeg,image/png,image/webp"
+            onChange={handleImage} required disabled={busy} />
           {preview && <img src={preview} alt="preview" className="image-preview" />}
-        </div>
-
-        <div className="field">
-          <label htmlFor="video">Animación / video <span className="muted">(mp4, máx 50 MB)</span></label>
-          <input id="video" type="file" accept="video/mp4" onChange={e => setVideoFile(e.target.files?.[0] ?? null)} required disabled={busy} />
         </div>
 
         {step === 'compiling' && (
@@ -112,8 +106,8 @@ export default function ArtworkNew() {
         {step === 'uploading' && <p className="muted">Subiendo archivos al servidor…</p>}
 
         <div className="form-actions">
-          <button className="btn" type="submit" disabled={busy || !imageFile || !videoFile || !title}>
-            {busy ? 'Procesando…' : 'Compilar y subir'}
+          <button className="btn" type="submit" disabled={busy || !imageFile || !title}>
+            {busy ? 'Procesando…' : 'Compilar y continuar'}
           </button>
           <Link to="/"><button className="btn btn-ghost" type="button" disabled={busy}>Cancelar</button></Link>
         </div>

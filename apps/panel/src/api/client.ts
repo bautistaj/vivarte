@@ -53,6 +53,31 @@ export async function downloadQr(id: string): Promise<Blob> {
   return res.blob()
 }
 
+// ── Elements ─────────────────────────────────────────────────────────────────
+export const getElements = (artworkId: string) =>
+  req<{ elements: SceneElement[] }>(`/artworks/${artworkId}/elements`)
+
+export async function createElement(artworkId: string, formData: FormData): Promise<{ element: SceneElement }> {
+  const res = await fetch(API + `/artworks/${artworkId}/elements`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: formData,
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Error al crear elemento')
+  return data
+}
+
+export const updateElement = (artworkId: string, elemId: string, data: Partial<SceneElement>) =>
+  req<{ element: SceneElement }>(`/artworks/${artworkId}/elements/${elemId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json' },
+  })
+
+export const deleteElement = (artworkId: string, elemId: string) =>
+  req<void>(`/artworks/${artworkId}/elements/${elemId}`, { method: 'DELETE' })
+
 // ── Types ────────────────────────────────────────────────────────────────────
 export interface User { id: string; email: string; name?: string; createdAt: string }
 export interface AuthResponse { token: string; user: User }
@@ -61,4 +86,12 @@ export interface Artwork {
   imageKey: string; imageUrl: string; viewerUrl: string
   imageWidth: number; imageHeight: number
   scanCount: number; createdAt: string
+}
+export interface SceneElement {
+  id: string; artworkId: string; type: string; fileKey: string; fileUrl: string
+  label: string
+  posX: number; posY: number; posZ: number
+  rotX: number; rotY: number; rotZ: number
+  scaleX: number; scaleY: number; scaleZ: number
+  width: number; height: number; order: number; createdAt: string
 }

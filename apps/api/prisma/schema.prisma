@@ -17,17 +17,39 @@ model User {
 }
 
 model Artwork {
-  id          String   @id @default(cuid())
-  slug        String   @unique
+  id          String         @id @default(cuid())
+  slug        String         @unique
   title       String
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   imageKey    String
-  videoKey    String
   mindKey     String
   imageWidth  Int
   imageHeight Int
-  scanCount   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  scanCount   Int            @default(0)
+  elements    SceneElement[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model SceneElement {
+  id        String   @id @default(cuid())
+  artworkId String
+  artwork   Artwork  @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  type      String
+  fileKey   String
+  label     String   @default("")
+  posX      Float    @default(0)
+  posY      Float    @default(0)
+  posZ      Float    @default(0)
+  rotX      Float    @default(0)
+  rotY      Float    @default(0)
+  rotZ      Float    @default(0)
+  scaleX    Float    @default(1)
+  scaleY    Float    @default(1)
+  scaleZ    Float    @default(1)
+  width     Float    @default(1)
+  height    Float    @default(1)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
 }
