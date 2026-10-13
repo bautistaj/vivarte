@@ -60,6 +60,16 @@ async function build() {
   const publicDir = path.join(__dirname, 'public')
   if (fs.existsSync(publicDir)) {
     await app.register(staticFiles, { root: publicDir, prefix: '/', decorateReply: false })
+
+    // SPA fallback: rutas del panel que no son archivos ni API
+    app.setNotFoundHandler(async (request, reply) => {
+      const url = request.url
+      if (url.startsWith('/api') || url.startsWith('/files') || url.startsWith('/a/')) {
+        return reply.status(404).send({ message: `Route ${request.method}:${url} not found`, error: 'Not Found', statusCode: 404 })
+      }
+      const html = fs.readFileSync(path.join(publicDir, 'index.html'), 'utf-8')
+      return reply.type('text/html').send(html)
+    })
   }
 
   await app.register(authRoutes, { prefix: '/api/auth' })
