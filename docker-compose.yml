@@ -1,0 +1,25 @@
+# Compose para desarrollo local (sin Traefik).
+# En producción el compose vive en thot/infra/projects/vivarte/.
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - vivarte_data:/app/data
+      - vivarte_uploads:/app/uploads
+    environment:
+      DATABASE_URL: file:/app/data/vivarte.db
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      UPLOAD_DIR: /app/uploads
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:3000}
+      MAX_IMAGE_SIZE: ${MAX_IMAGE_SIZE:-10485760}
+      MAX_VIDEO_SIZE: ${MAX_VIDEO_SIZE:-52428800}
+      PORT: "3000"
+
+volumes:
+  vivarte_data:
+  vivarte_uploads:
