@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from 'fastify'
 import { randomBytes, randomUUID } from 'crypto'
 import slugify from 'slugify'
+import QRCode from 'qrcode'
 
 const ALLOWED_IMAGE = ['image/jpeg', 'image/png', 'image/webp']
 const ALLOWED_VIDEO = ['video/mp4']
@@ -125,6 +126,22 @@ const artworkRoutes: FastifyPluginAsync = async (fastify) => {
     if (!artwork) return reply.status(404).send({ error: 'Obra no encontrada' })
     const base = process.env.PUBLIC_BASE_URL || ''
     return { artwork: { ...artwork, imageUrl: `${base}/files/${artwork.imageKey}`, viewerUrl: `${base}/a/${artwork.slug}` } }
+  })
+
+  // GET /api/artworks/:id/qr — QR PNG del visor público
+  fastify.get('/:id/qr', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const artwork = await fastify.prisma.artwork.findFirst({ where: { id, userId: request.user.sub } })
+    if (!artwork) return reply.status(404).send({ error: 'Obra no encontrada' })
+
+    const base = process.env.PUBLIC_BASE_URL || ''
+    const viewerUrl = `${base}/a/${artwork.slug}`
+    const png = await QRCode.toBuffer(viewerUrl, { type: 'png', width: 400, margin: 2 })
+
+    return reply
+      .type('image/png')
+      .header('Content-Disposition', `attachment; filename="${artwork.slug}-qr.png"`)
+      .send(png)
   })
 
   // DELETE /api/artworks/:id

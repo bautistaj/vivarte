@@ -47,6 +47,12 @@ export async function createArtwork(formData: FormData): Promise<{ artwork: Artw
 export const deleteArtwork = (id: string) =>
   req<void>(`/artworks/${id}`, { method: 'DELETE' })
 
+export async function downloadQr(id: string): Promise<Blob> {
+  const res = await fetch(API + `/artworks/${id}/qr`, { headers: authHeaders() })
+  if (!res.ok) throw new Error('Error al generar QR')
+  return res.blob()
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 export interface User { id: string; email: string; name?: string; createdAt: string }
 export interface AuthResponse { token: string; user: User }

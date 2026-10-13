@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { getArtworks, deleteArtwork, Artwork } from '../api/client'
+import { getArtworks, deleteArtwork, downloadQr, Artwork } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 
 export default function Dashboard() {
@@ -19,6 +19,16 @@ export default function Dashboard() {
     if (!confirm(`¿Eliminar "${title}"? Esta acción no se puede deshacer.`)) return
     await deleteArtwork(id)
     setArtworks(prev => prev.filter(a => a.id !== id))
+  }
+
+  const handleQr = async (id: string, slug: string) => {
+    const blob = await downloadQr(id)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${slug}-qr.png`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const handleLogout = () => {
@@ -57,6 +67,7 @@ export default function Dashboard() {
                 <p className="muted">{a.scanCount} escaneos · {new Date(a.createdAt).toLocaleDateString('es-MX')}</p>
                 <div className="card-actions">
                   <a href={a.viewerUrl} target="_blank" rel="noreferrer">Ver visor</a>
+                  <button className="btn btn-ghost" onClick={() => handleQr(a.id, a.slug)}>QR</button>
                   <button className="btn btn-danger" onClick={() => handleDelete(a.id, a.title)}>Eliminar</button>
                 </div>
               </div>

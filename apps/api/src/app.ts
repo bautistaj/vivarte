@@ -10,6 +10,7 @@ import prismaPlugin from './plugins/prisma'
 import storagePlugin from './plugins/storage'
 import authRoutes from './routes/auth'
 import artworkRoutes from './routes/artworks'
+import viewerRoutes from './routes/viewer'
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -74,6 +75,7 @@ async function build() {
 
   await app.register(authRoutes, { prefix: '/api/auth' })
   await app.register(artworkRoutes, { prefix: '/api/artworks' })
+  await app.register(viewerRoutes, { prefix: '/a' })
 
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
 
