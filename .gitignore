@@ -7,8 +7,9 @@ dist/
 apps/panel/dist/
 apps/api/dist/
 
-# Prisma
-apps/api/prisma/migrations/**/
+# Prisma — solo el DB local de desarrollo, las migraciones SÍ van a git
+apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
 
 # OS
 .DS_Store

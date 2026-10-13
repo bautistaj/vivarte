@@ -1,25 +1,46 @@
-# Compose para desarrollo local (sin Traefik).
-# En producción el compose vive en thot/infra/projects/vivarte/.
+# Producción: buildea la imagen desde este repo y la publica bajo
+# https://bautistaj.dev/vivarte/ vía Traefik.
+#
+# Traefik hace `StripPrefix` de `/vivarte` → el contenedor recibe requests
+# en raíz (/api/..., /files/...) sin saber del prefijo.
+#
+# Requisitos en el host: Traefik ya corriendo, red externa `traefik-public`.
+# Deploy: git pull && sudo docker compose up -d --build
+
 services:
-  api:
+  vivarte:
     build:
       context: ./apps/api
-      dockerfile: Dockerfile
+    image: vivarte:latest
+    container_name: vivarte
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     volumes:
-      - vivarte_data:/app/data
+      - vivarte_data:/app/data      # SQLite
       - vivarte_uploads:/app/uploads
     environment:
       DATABASE_URL: file:/app/data/vivarte.db
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_SECRET: ${JWT_SECRET}
       UPLOAD_DIR: /app/uploads
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:3000}
+      PUBLIC_BASE_URL: https://bautistaj.dev/vivarte
       MAX_IMAGE_SIZE: ${MAX_IMAGE_SIZE:-10485760}
       MAX_VIDEO_SIZE: ${MAX_VIDEO_SIZE:-52428800}
+      NODE_ENV: production
       PORT: "3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vivarte.rule=Host(`bautistaj.dev`) && PathPrefix(`/vivarte`)"
+      - "traefik.http.routers.vivarte.entrypoints=websecure"
+      - "traefik.http.routers.vivarte.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.vivarte.middlewares=vivarte-strip"
+      - "traefik.http.middlewares.vivarte-strip.stripprefix.prefixes=/vivarte"
+      - "traefik.http.services.vivarte.loadbalancer.server.port=3000"
+    networks:
+      - traefik-public
 
 volumes:
   vivarte_data:
   vivarte_uploads:
+
+networks:
+  traefik-public:
+    external: true
