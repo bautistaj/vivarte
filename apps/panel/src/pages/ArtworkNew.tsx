@@ -2,30 +2,10 @@ import { useState, FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { createArtwork } from '../api/client'
 
-// ── MindAR compiler (cargado desde CDN, evita problemas de WASM en el bundle)
-declare global {
-  interface Window {
-    MINDAR: {
-      IMAGE: {
-        Compiler: new () => {
-          compileImageTargets(imgs: HTMLImageElement[], onProgress: (p: number) => void): Promise<void>
-          exportData(): Promise<ArrayBuffer>
-        }
-      }
-    }
-  }
-}
-
-let mindARReady = false
-function loadMindAR(): Promise<void> {
-  if (mindARReady) return Promise.resolve()
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script')
-    s.src = 'https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js'
-    s.onload = () => { mindARReady = true; resolve() }
-    s.onerror = () => reject(new Error('No se pudo cargar el compilador de MindAR'))
-    document.head.appendChild(s)
-  })
+// ── MindAR compiler (import dinámico — Vite lo separa en su propio chunk)
+interface MindARCompiler {
+  compileImageTargets(imgs: HTMLImageElement[], onProgress: (p: number) => void): Promise<void>
+  exportData(): Promise<ArrayBuffer>
 }
 
 function loadImage(file: File): Promise<HTMLImageElement> {
@@ -39,8 +19,9 @@ function loadImage(file: File): Promise<HTMLImageElement> {
 }
 
 async function compileMindAR(imageFile: File, onProgress: (p: number) => void): Promise<Blob> {
-  await loadMindAR()
-  const compiler = new window.MINDAR.IMAGE.Compiler()
+  // Carga el módulo solo cuando se necesita (lazy chunk)
+  const { Compiler } = await import('mind-ar/dist/mindar-image.prod.js') as { Compiler: new () => MindARCompiler }
+  const compiler = new Compiler()
   const img = await loadImage(imageFile)
   await compiler.compileImageTargets([img], onProgress)
   const buffer = await compiler.exportData()
