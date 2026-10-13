@@ -4,7 +4,7 @@ ARG VITE_BASE_PATH=/vivarte/
 ENV VITE_BASE_PATH=$VITE_BASE_PATH
 WORKDIR /panel
 COPY apps/panel/package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 COPY apps/panel .
 RUN npm run build
 
